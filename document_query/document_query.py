@@ -321,14 +321,14 @@ def update_ExistList():
             f.writelines("以下是已提交文件的同学名单：\n")
         else:
             f.writelines(f"已提交{len(existnums)}人，还有{len(allnums)}人未提交。\n以下是已提交文件的同学名单：\n")
-        f.writelines("学号 姓名 提交次数 最后一次提交的文件的时间\n")
+        f.writelines("学号      姓名   最后一次提交的文件的时间\n")
         for i in existnums:
             name = classmates[i] + "  " if len(classmates[i]) == 2 else classmates[i]
 
             f.writelines(
                 i + " " +
                 name + " " +
-                str(allnums_count[int(i)]["count"]) + " " +
+                # str(allnums_count[int(i)]["count"]) + " " +
                 str(allnums_count[int(i)]["latest_time"]) +
                 "\n"
             )
