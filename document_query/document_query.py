@@ -158,7 +158,6 @@ def printAllNum():
         pass
     else:
         name = ord_path.split('\\')[-2] + " " + ord_path.split('\\')[-1]
-    print("--------查询开始--------")
     print(f'本次查询的是 {name}\n应提交人数{len(classmates.keys())}人\n')  # 打印总人数和作业
 
 
@@ -290,7 +289,7 @@ def debug():
     pass
 
 
-def progress():
+def deal_top():
     global dealmode, Exist, Exist_more, NonExist, NonExist_more
     if dealmode == "filename":
         f_dealAll()
@@ -299,15 +298,18 @@ def progress():
     elif dealmode == "s_input":
         s_dealAll()
 
-    printAllNum()
 
+def print_top():
+    printAllNum()
     if Exist:
         printExist(more=Exist_more)
     if NonExist:
         printNonExist(more=NonExist_more)
-    if ExistList_path:
-        update_ExistList()
-    print("\n--------查询结束--------\n\n")
+
+
+def update_top(**kwargs):
+    update_ExistList() if ExistList_path else None
+    update_NonExistList() if kwargs.get("update_NonExistList", False) else None
 
 
 def update_ExistList():
@@ -336,7 +338,6 @@ def update_ExistList():
             for i in outOfClass:
                 f.writelines(f"{i}\n")
             f.writelines("请上传以上文件的同学联系我(QQ:2440075307)，可能是我的查询名单有缺漏或者是其他原因。\n\n")
-
 
         f.writelines("本文件已实现每五分钟自动更新，只要我的电脑开着。"
                      "\n如果发现自己已提交文件但长时间未出现在名单中，请私聊我(QQ:2440075307)\n")
@@ -407,6 +408,16 @@ def get_baidu_path_filenames():
     filenames_time = [int(i["server_mtime"]) for i in tmp_list]
 
 
+def clear_NonExistList():
+    tmpstrlist = list(ExistList_path)
+    tmpstrlist.insert(-4, "1")
+    try:
+        os.remove("".join(tmpstrlist))
+    except:
+        pass
+    pass
+
+
 class init_datas:
     """
     增强复用性，如果同时又多份作业同时收可以使用这个类记录信息
@@ -451,6 +462,7 @@ class datass:
         if len(args) != 0:
             for i in args:
                 self.data_list.append(i)
+        self.if_clear_NonExistList = False
         pass
 
     def data_append(self, *args: init_datas):
@@ -472,7 +484,15 @@ class datass:
     def progress_all(self):
         print("本轮查询时间是", time.strftime('%b %d %H:%M:%S %Y\n', time.localtime()))
         for i in self.data_list:
+            print("--------查询开始--------")
+
             init_from_class(i)
-            progress()
+            deal_top()
+            print_top()
+            update_top(update_NonExistList=False)
+
+            if self.if_clear_NonExistList:
+                clear_NonExistList()
+            print("\n--------查询结束--------\n\n")
 
     pass
