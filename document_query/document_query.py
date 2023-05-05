@@ -171,16 +171,27 @@ def printExist(**kwargs):
     """
     print(f'已经交了{len(existnums) + len(outOfClass)}人', end="")  # 打印已交人数
     print(f'，班内{len(existnums)}人，班外{len(outOfClass)}人', end="") if len(outOfClass) != 0 else None
+    tmp_repeat = {
+        "num_people": 0,
+        "num_file": 0
+    }
+    for i in allnums_count.keys():
+        if allnums_count[i]["count"] > 1:
+            tmp_repeat["num_people"] += 1
+            tmp_repeat["num_file"] += allnums_count[i]["count"] - 1
+    if tmp_repeat["num_people"] != 0:
+        print(f'\n有{tmp_repeat["num_people"]}人重复提交，有{tmp_repeat["num_file"]}份重复文件')
+
+    if len(outOfClass) != 0:
+        print('班外同学是：')
+        for i in outOfClass:
+            print(i)
+        pass
 
     if kwargs.get('more', False):
         print('，这些同学是：')
         for i in existnums:
             print(i, classmates[i])  # 打印已交同学学号姓名
-        if len(outOfClass) != 0:
-            print('班外同学是：')
-            for i in outOfClass:
-                print(i)
-            pass
 
 
 # noinspection PyTypeChecker
@@ -319,6 +330,14 @@ def update_ExistList():
                 str(allnums_count[int(i)]["latest_time"]) +
                 "\n"
             )
+
+        if len(outOfClass) != 0:
+            f.writelines(f"\n本次查询中找到不在被查询名单的同学提交的文件，该文件是：\n")
+            for i in outOfClass:
+                f.writelines(f"{i}\n")
+            f.writelines("请上传以上文件的同学联系我(QQ:2440075307)，可能是我的查询名单有缺漏或者是其他原因。\n\n")
+
+
         f.writelines("本文件已实现每五分钟自动更新，只要我的电脑开着。"
                      "\n如果发现自己已提交文件但长时间未出现在名单中，请私聊我(QQ:2440075307)\n")
     pass
