@@ -30,8 +30,7 @@ existnums = []  # 已交的同学的学号
 outOfClass = []  # 班外同学
 filenames_time = []  # 记录每个文件的时间
 allnums_count = {}  # 记录每个人的提交次数，多文件提交时间列表，最后一次提交时间
-s_input = """
-"""
+s_input = """ """
 
 
 def init(**kwargs):
@@ -97,7 +96,7 @@ def f_dealAll():
         try:
             allnums.remove(filename_num)  # 剔除已交的同学
             allnums_count[filename_num]["count"] += 1
-            allnums_count[filename_num]["times"].append(filenames_time[i])
+            allnums_count[filename_num]["times"].append(filenames_time[i]) if Panbaidu_dir != "" else None
 
             filename_num = str(filename_num)
             filename_num = '0' + filename_num if len(filename_num) != 9 else filename_num
@@ -105,7 +104,7 @@ def f_dealAll():
         except:
             if filename_num in allnums_count:
                 allnums_count[filename_num]["count"] += 1
-                allnums_count[filename_num]["times"].append(filenames_time[i])
+                allnums_count[filename_num]["times"].append(filenames_time[i]) if Panbaidu_dir != "" else None
             else:
                 outOfClass.append(filenames[i])  # 添加班外或错误内容
 
