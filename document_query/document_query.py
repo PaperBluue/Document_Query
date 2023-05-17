@@ -3,6 +3,7 @@ import re
 import docx
 import time
 import requests
+import sys
 
 classmates = {0: "tmp"
               }  # 班级同学信息
@@ -434,6 +435,29 @@ class init_datas:
     pass
 
 
+def data_list_check(func):
+    """
+    datass的data_list校验装饰器
+    说实话其实不应该写成这样的……
+    但图一乐反正也没人看，学习一下这种装饰器的写法
+
+    """
+    def wrapper(self):
+        try:
+            if len(self.data_list) == 0:
+                raise Exception("data_list空空如也，使用data_append方法添加信息对象")
+            for i in self.data_list:
+                if not isinstance(i, init_datas):
+                    raise Exception("data_list里面有怪东西")
+        except Exception as e:
+            print("异常：", e)
+            sys.exit(0)
+
+        func(self)
+
+    return wrapper
+
+
 def init_from_class(datas: init_datas):
     """
     使用init_datas来初始化，增强复用性
@@ -480,8 +504,10 @@ class datass:
     def data_remove_all(self):
         self.data_list.clear()
 
+    @data_list_check
     def progress_all(self):
         print("本轮查询时间是", time.strftime('%b %d %H:%M:%S %Y\n', time.localtime()))
+        # self.data_checkout()
         for i in self.data_list:
             print("--------查询开始--------")
 
@@ -494,4 +520,3 @@ class datass:
                 clear_NonExistList()
             print("\n--------查询结束--------\n\n")
 
-    pass
