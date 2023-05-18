@@ -432,7 +432,6 @@ def clear_NonExistList():
         os.remove("".join(tmpstrlist))
     except:
         pass
-    pass
 
 
 class init_datas:
