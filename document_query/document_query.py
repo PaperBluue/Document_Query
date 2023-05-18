@@ -276,6 +276,10 @@ def read_rollCall():
 
 
 def read_input(path: str = None):
+    """
+    读取被查询文本
+
+    """
     f = open(path, encoding="UTF-8")
     txt_tmp = f.read()
     f.close()
@@ -313,6 +317,11 @@ def update_top(**kwargs):
 
 
 def update_ExistList():
+    """
+    更新结果展示的文本文件
+
+    """
+
     # print(filenames)
     with open(ExistList_path, "w") as f:
         f.writelines('本文件最后一次更新时间是 ' + time.strftime('%b %d %H:%M:%S %Y\n', time.localtime()))
@@ -346,6 +355,10 @@ def update_ExistList():
 
 # noinspection PyTypeChecker
 def update_NonExistList():
+    """
+    基本弃用 没必要的方法
+    """
+
     tmpstrlist = list(ExistList_path)
     tmpstrlist.insert(-4, "1")
     with open("".join(tmpstrlist), "w") as f:
@@ -409,6 +422,10 @@ def get_baidu_path_filenames():
 
 
 def clear_NonExistList():
+    """
+    删除不存在名单
+    """
+
     tmpstrlist = list(ExistList_path)
     tmpstrlist.insert(-4, "1")
     try:
@@ -430,7 +447,34 @@ class init_datas:
         self.s_path = s_path
         self.existlist_path = existlist_path
         self.panbaidu_path = panbaidu_path
+        self.check_validity()
         pass
+
+    def check_validity(self):
+        """
+        检查init_data是否合法
+        """
+        try:
+            assert len(self.rc_path) > 0, "rc_path 名单路径缺失"
+            assert self.check_input_path(self.s_path,
+                                         self.panbaidu_path,
+                                         self.files_path), "被查询内容路径过多"
+        except AssertionError as e:
+            print("error:", e)
+            sys.exit(0)
+        except:
+            print("error:init_datas.check_validity()???")
+            sys.exit(0)
+        pass
+
+    @staticmethod
+    def check_input_path(*args):
+        tmp = 0
+        for i in args:
+            if i is not None:
+                if len(i) != 0:
+                    tmp += 1
+        return True if tmp == 1 else False
 
     pass
 
@@ -442,15 +486,17 @@ def data_list_check(func):
     但图一乐反正也没人看，学习一下这种装饰器的写法
 
     """
+
     def wrapper(self):
         try:
-            if len(self.data_list) == 0:
-                raise Exception("data_list空空如也，使用data_append方法添加信息对象")
+            assert len(self.data_list) != 0, "data_list空空如也，使用data_append方法添加信息对象"
             for i in self.data_list:
-                if not isinstance(i, init_datas):
-                    raise Exception("data_list里面有怪东西")
-        except Exception as e:
-            print("异常：", e)
+                assert isinstance(i, init_datas), "data_list里面有怪东西"
+        except AssertionError as e:
+            print("error:", e)
+            sys.exit(0)
+        except:
+            print("error:data_list_check()????")
             sys.exit(0)
 
         func(self)
@@ -519,4 +565,3 @@ class datass:
             if self.if_clear_NonExistList:
                 clear_NonExistList()
             print("\n--------查询结束--------\n\n")
-
