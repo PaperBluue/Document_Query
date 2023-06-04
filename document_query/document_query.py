@@ -32,6 +32,7 @@ outOfClass = []  # 班外同学
 filenames_time = []  # 记录每个文件的时间
 allnums_count = {}  # 记录每个人的提交次数，多文件提交时间列表，最后一次提交时间
 s_input = """ """
+error_files = {}
 
 
 def init(**kwargs):
@@ -42,13 +43,15 @@ def init(**kwargs):
     """
     global ord_path, allnums, filenames, \
         existnums, outOfClass, rollCall_path, sinput_path, \
-        s_input, ExistList_path, Panbaidu_dir, allnums_count
+        s_input, ExistList_path, Panbaidu_dir, allnums_count, \
+        error_files
 
     allnums.clear()  # 清空列表
     filenames.clear()
     existnums.clear()
     outOfClass.clear()
     allnums_count.clear()
+    error_files.clear()
     ord_path = ""  # 清空字符串
     rollCall_path = ""
     sinput_path = ""
@@ -58,7 +61,13 @@ def init(**kwargs):
     if kwargs.get("files_path", False):
         ord_path = kwargs.get("files_path", ord_path)  # 文件路径
         files = os.scandir(ord_path)  # 获取所有文件信息
-        filenames = [i.name for i in files]  # 文件夹内所有的文件的文件名列表
+        for i in files:
+            filenames.append(i.name)
+            # 如果存在文件为0Kb将记录并回报
+            if os.path.getsize(ord_path + "\\" + i.name) < 10:
+                if "0Kb" not in error_files:
+                    error_files["0Kb"] = []
+                error_files["0Kb"].append(i.name)
     if kwargs.get("rc_path", False):
         rollCall_path = kwargs.get("rc_path", rollCall_path)
         read_rollCall()
@@ -309,6 +318,10 @@ def print_top():
         printExist(more=Exist_more)
     if NonExist:
         printNonExist(more=NonExist_more)
+    if "0Kb" in error_files:
+        print("\n\n发现0Kb文件如下")
+        for i in error_files["0Kb"]:
+            print(i)
 
 
 def update_top(**kwargs):
@@ -418,7 +431,13 @@ def get_baidu_path_filenames():
     response = requests.request("GET", url, headers=headers, data=payload, files=files_list)
     tmp_list = eval(response.text.encode('utf8').decode())['list']
     filenames = [i["server_filename"] for i in tmp_list]
+    filesize = [i["size"] for i in tmp_list]
     filenames_time = [int(i["server_mtime"]) for i in tmp_list]
+    for i in range(len(filesize)):
+        if filesize[i] < 10:
+            if "0Kb" not in error_files:
+                error_files["0Kb"] = []
+            error_files["0Kb"].append(filenames[i])
 
 
 def clear_NonExistList():
