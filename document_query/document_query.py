@@ -13,6 +13,7 @@ rollCall_path: str = str()  # 读取名单文件路径
 sinput_path: str = str()  # 读取被查询文件路径
 ExistList_path: str = str()  # 输出查询结果文件路径
 Panbaidu_dir: str = str()  # 查询的百度盘的文件夹的路径
+Duplicate_file_path: str = str()
 
 rc_mode = 2  # rc_mode：被读取的文本如果是”学号 姓名“就用2。1的情况没写完，看缘分吧。
 dealmode = "filename"  # 选择处理文件信息的方式
@@ -32,7 +33,7 @@ outOfClass = []  # 班外同学
 filenames_time = []  # 记录每个文件的时间
 allnums_count = {}  # 记录每个人的提交次数，多文件提交时间列表，最后一次提交时间
 s_input = """ """
-error_files = {}
+error_files = {}  # 存有问题的文件
 
 
 def init(**kwargs):
@@ -44,7 +45,7 @@ def init(**kwargs):
     global ord_path, allnums, filenames, \
         existnums, outOfClass, rollCall_path, sinput_path, \
         s_input, ExistList_path, Panbaidu_dir, allnums_count, \
-        error_files
+        error_files, Duplicate_file_path
 
     allnums.clear()  # 清空列表
     filenames.clear()
@@ -57,6 +58,7 @@ def init(**kwargs):
     sinput_path = ""
     ExistList_path = ""
     Panbaidu_dir = ""
+    Duplicate_file_path = ""
 
     if kwargs.get("files_path", False):
         ord_path = kwargs.get("files_path", ord_path)  # 文件路径
@@ -80,13 +82,17 @@ def init(**kwargs):
         Panbaidu_dir = kwargs.get("panbaidu_path", Panbaidu_dir)
         get_baidu_path_filenames()
         ord_path = "baidu/" + Panbaidu_dir
+    if kwargs.get("duplicate_file_path", False):
+        Duplicate_file_path = kwargs.get("duplicate_file_path", Duplicate_file_path)
 
     allnums = [int(i) for i in classmates.keys()] \
         if rc_mode == 2 else [i for i in classmates.values()]  # 原班级学号列表，处理后即未交同学学号列表
     for i in allnums:
         allnums_count[i] = {"count": 0,
                             "times": [0],
-                            "latest_time": ""
+                            "name": [""],
+                            "latest_time": "这人什么都没交",
+                            "latest_name": "这人什么都没交"
                             }
 
 
@@ -104,25 +110,29 @@ def f_dealAll():
             filename_num = 0
         # noinspection PyBroadException
         try:
-            allnums.remove(filename_num)  # 剔除已交的同学
+            allnums.remove(filename_num)  # 剔除已交的同学，若重复提交则跳转至except处
             allnums_count[filename_num]["count"] += 1
             allnums_count[filename_num]["times"].append(filenames_time[i]) if Panbaidu_dir != "" else None
+            allnums_count[filename_num]["name"].append(filenames[i]) if Panbaidu_dir != "" else None
 
             filename_num = str(filename_num)
             filename_num = '0' + filename_num if len(filename_num) != 9 else filename_num
             existnums.append(filename_num)  # 添加已提交同学
-        except:
+        except:  # 重复提交的话
             if filename_num in allnums_count:
                 allnums_count[filename_num]["count"] += 1
                 allnums_count[filename_num]["times"].append(filenames_time[i]) if Panbaidu_dir != "" else None
+                allnums_count[filename_num]["name"].append(filenames[i]) if Panbaidu_dir != "" else None
             else:
                 outOfClass.append(filenames[i])  # 添加班外或错误内容
 
-    for i in allnums_count.keys():
+    for i in allnums_count.keys():  # 获取最近一次提交的文件时间和文件名
+        tmp_max_time = max(allnums_count[i]["times"])
         allnums_count[i]["latest_time"] = \
-            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(max(allnums_count[i]["times"])))
-
-    pass
+            time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(tmp_max_time))
+        allnums_count[i]["latest_name"] = \
+            allnums_count[i]["name"][allnums_count[i]["times"].index(tmp_max_time)]
+        # print(allnums_count[i]["latest_name"])
 
 
 def f_dealAll_data():
@@ -177,7 +187,7 @@ def printExist(**kwargs):
     :param kwargs: more: True即打印名单
     :return: None
     """
-    print(f'已经交了{len(existnums) + len(outOfClass)}人', end="")  # 打印已交人数
+    print(f'已提交人数{len(existnums) + len(outOfClass)}人', end="")  # 打印已交人数
     print(f'，班内{len(existnums)}人，班外{len(outOfClass)}人', end="") if len(outOfClass) != 0 else None
     tmp_repeat = {
         "num_people": 0,
@@ -210,17 +220,21 @@ def printNonExist(**kwargs):
     :param kwargs: more: True即打印名单
     :return: None
     """
-    print(f'\n还有{len(allnums)}人没交', end="")  # 打印未交人数
-    if kwargs.get('more', False):
-        print('，这些人是：')
-        if rc_mode == 2:
-            for i in allnums:
-                i = str(i)
-                i = '0' + i if len(i) == 8 else i
-                print(i, classmates[i])  # 打印未交同学的学号姓名
-        elif rc_mode == 1:
-            for i in allnums:
-                print(i)
+    if len(allnums) == 0:
+        print("\n名单内所有人均已完成提交！", end="")
+        pass
+    else:
+        print(f'\n未提交人数{len(allnums)}人', end="")  # 打印未交人数
+        if kwargs.get('more', False):
+            print('，这些人是：')
+            if rc_mode == 2:
+                for i in allnums:
+                    i = str(i)
+                    i = '0' + i if len(i) == 8 else i
+                    print(i, classmates[i])  # 打印未交同学的学号姓名
+            elif rc_mode == 1:
+                for i in allnums:
+                    print(i)
 
 
 # noinspection PyTypeChecker
@@ -327,6 +341,7 @@ def print_top():
 def update_top(**kwargs):
     update_ExistList() if ExistList_path else None
     update_NonExistList() if kwargs.get("update_NonExistList", False) else None
+    update_Duplicate_file_list() if Duplicate_file_path else None
 
 
 def update_ExistList():
@@ -361,8 +376,9 @@ def update_ExistList():
                 f.writelines(f"{i}\n")
             f.writelines("请上传以上文件的同学联系我(QQ:2440075307)，可能是我的查询名单有缺漏或者是其他原因。\n\n")
 
-        f.writelines("本文件已实现每五分钟自动更新，只要我的电脑开着。"
-                     "\n如果发现自己已提交文件但长时间未出现在名单中，请私聊我(QQ:2440075307)\n")
+        f.writelines("备注1：本文件已实现每五分钟自动更新，只要我的电脑开着。"
+                     "\n    如果发现自己已提交文件但长时间未出现在名单中，请私聊我(QQ:2440075307)\n")
+        f.writelines("备注2：如果是通过邮箱提交的文件，因为一句话说不清的原因，文件的提交时间会不准确。\n")
     pass
 
 
@@ -440,6 +456,15 @@ def get_baidu_path_filenames():
             error_files["0Kb"].append(filenames[i])
 
 
+def update_Duplicate_file_list():
+    global filenames, filenames_time
+    with open("".join(Duplicate_file_path), "w") as f:
+        for i in allnums_count.keys():
+            if allnums_count[i]["latest_name"]:
+                f.writelines(allnums_count[i]["latest_name"] + '\n')
+            pass
+
+
 def clear_NonExistList():
     """
     删除不存在名单
@@ -459,12 +484,19 @@ class init_datas:
 
     """
 
-    def __init__(self, files_path=None, rc_path=None, s_path=None, existlist_path=None, panbaidu_path=None):
+    def __init__(self, files_path=None,
+                 rc_path=None,
+                 s_path=None,
+                 existlist_path=None,
+                 panbaidu_path=None,
+                 duplicate_file_path=None):
+
         self.files_path = files_path
         self.rc_path = rc_path
         self.s_path = s_path
         self.existlist_path = existlist_path
         self.panbaidu_path = panbaidu_path
+        self.duplicate_file_path = duplicate_file_path
         self.check_validity()
         pass
 
@@ -534,7 +566,8 @@ def init_from_class(datas: init_datas):
         rc_path=datas.rc_path,  # 外部名单输入，没有的话就None
         s_path=datas.s_path,
         existlist_path=datas.existlist_path,
-        panbaidu_path=datas.panbaidu_path
+        panbaidu_path=datas.panbaidu_path,
+        duplicate_file_path=datas.duplicate_file_path
     )
 
 
@@ -573,7 +606,7 @@ class datass:
         print("本轮查询时间是", time.strftime('%b %d %H:%M:%S %Y\n', time.localtime()))
         # self.data_checkout()
         for i in self.data_list:
-            print("--------查询开始--------")
+            print("------------------查询开始-------------------")
 
             init_from_class(i)
             deal_top()
@@ -582,4 +615,4 @@ class datass:
 
             if self.if_clear_NonExistList:
                 clear_NonExistList()
-            print("\n--------查询结束--------\n\n")
+            print("\n------------------查询结束------------------\n\n")
