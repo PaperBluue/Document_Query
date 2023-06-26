@@ -21,12 +21,37 @@ datas_1 = document_query.init_datas(
     # 输出查询结果的文件路径
     existlist_path=None,
     # 查询名单路径
-    rc_path=None
+    rc_path=None,
+    # 重复文件筛选清单路径
+    duplicate_file_path=None
 )
 
 # 创建顶层对象
 top = document_query.datass()
 # 把创建的基本信息保存对象全部添加导顶层模块中
 top.data_append(datas_1)
+
+
 # 开始
-top.progress_all()
+
+def run_data():
+    top.progress_all()
+
+
+def switch_NonExist_more():
+    document_query.NonExist_more = ~document_query.NonExist_more
+    print(f"此时是否打印未交名单？{bool(document_query.NonExist_more)}")
+
+
+def switch_Exist_more():
+    document_query.Exist_more = ~document_query.Exist_more
+    print(f"此时是否打印已交名单？{bool(document_query.Exist_more)}")
+
+
+def show_NonExist_more():
+    print(f"未交名单：{bool(document_query.NonExist_more)}")
+    print(f"已交名单：{bool(document_query.Exist_more)}")
+
+
+if __name__ == '__main__':
+    top.progress_all()
